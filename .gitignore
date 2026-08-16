@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+venv/
+.env
+*.csv.bak
+.DS_Store
+data/raw/*.xlsx
+!data/raw/.gitkeep
