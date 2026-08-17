@@ -10,3 +10,5 @@ data/raw/*.xlsx
 notebooks/fix_notebook.py
 notebooks/verify.py
 notebooks/run_eda.py
+notebooks/build_02_eda_notebook.py
+notebooks/build_03_arima_notebook.py

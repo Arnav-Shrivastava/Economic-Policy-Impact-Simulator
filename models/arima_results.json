@@ -1,0 +1,25 @@
+{
+  "model": "ARIMA",
+  "target": "GDP_Growth",
+  "order": [
+    1,
+    0,
+    0
+  ],
+  "train_period": {
+    "start": "2010-01-01",
+    "end": "2022-07-01"
+  },
+  "test_period": {
+    "start": "2022-10-01",
+    "end": "2025-10-01"
+  },
+  "n_train": 51,
+  "n_test": 13,
+  "metrics": {
+    "RMSE": 0.923632,
+    "MAPE": 11.460149
+  },
+  "aic": 244.3899,
+  "bic": 250.1853
+}
