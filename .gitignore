@@ -7,3 +7,6 @@ venv/
 .DS_Store
 data/raw/*.xlsx
 !data/raw/.gitkeep
+notebooks/fix_notebook.py
+notebooks/verify.py
+notebooks/run_eda.py
