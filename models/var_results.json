@@ -1,0 +1,53 @@
+{
+  "model": "VAR",
+  "scenarios": {
+    "A": {
+      "description": "3 variables (CPI, GDP, Unemployment), full sample 2010-Q2 to 2025-Q4",
+      "lag_order": 1,
+      "n_train": 53,
+      "n_test": 10,
+      "aic": -0.6817,
+      "bic": -0.27,
+      "metrics": {
+        "d_CPI_Inflation": {
+          "RMSE": 0.797892,
+          "MAPE": 88.853
+        },
+        "d_GDP_Growth": {
+          "RMSE": 0.159565,
+          "MAPE": 91.4882
+        },
+        "d_Unemployment_Rate": {
+          "RMSE": 0.07292,
+          "MAPE": 244.607
+        }
+      }
+    },
+    "B": {
+      "description": "4 variables (Repo Rate + above), sample 2010-Q2 to 2021-Q1",
+      "lag_order": 1,
+      "n_train": 34,
+      "n_test": 10,
+      "aic": -3.195,
+      "bic": -2.3759,
+      "metrics": {
+        "d_Repo_Rate": {
+          "RMSE": 0.265509,
+          "MAPE": 119.9417
+        },
+        "d_CPI_Inflation": {
+          "RMSE": 1.090464,
+          "MAPE": 71.6701
+        },
+        "d_GDP_Growth": {
+          "RMSE": 5.826286,
+          "MAPE": 99.1276
+        },
+        "d_Unemployment_Rate": {
+          "RMSE": 0.728872,
+          "MAPE": 100.0109
+        }
+      }
+    }
+  }
+}

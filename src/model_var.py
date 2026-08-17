@@ -404,17 +404,558 @@ def run_var_pipeline(
         "granger_results": granger_results,
     }
 
+# =============================================================================
+# Impulse Response Function (IRF)
+# =============================================================================
+
+def plot_irf(
+    var_result,
+    impulse_var: str = "d_Repo_Rate",
+    periods: int = 10,
+    save_path=None,
+    orth: bool = True,
+) -> object:
+    """
+    Compute and plot the Impulse Response Function (IRF) showing how a
+    one-unit shock to ``impulse_var`` propagates to every other variable
+    over ``periods`` quarters.
+
+    What is an IRF?
+    ---------------
+    An IRF traces the effect of a single, temporary one-unit shock to one
+    variable (here: d_Repo_Rate) on all other variables in the system,
+    holding everything else constant.
+
+    Because the VAR operates on *first-differenced* series, the responses
+    are changes in the rate-of-change.  Cumulate (sum) them to recover
+    the effect on *levels*.
+
+    Orthogonalised IRF (orth=True, default)
+    ----------------------------------------
+    The Cholesky decomposition of the residual covariance matrix isolates
+    each shock structurally.  The variable ordering in the DataFrame sets
+    the causal chain:
+        d_Repo_Rate -> d_CPI_Inflation -> d_GDP_Growth -> d_Unemployment_Rate
+    This means monetary policy is assumed to affect output and prices only
+    with a lag, not in the same quarter.
+
+    Parameters
+    ----------
+    var_result  : fitted VARResults object
+    impulse_var : column whose shock we trace (default 'd_Repo_Rate')
+    periods     : forecast horizon in quarters (default 10)
+    save_path   : optional path to save the figure
+    orth        : use orthogonalised IRF (default True)
+
+    Returns
+    -------
+    irf_obj : statsmodels IRAnalysis object (.irfs / .orth_irfs arrays)
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+
+    col_names = var_result.model.endog_names
+    if impulse_var not in col_names:
+        raise ValueError(
+            f"'{impulse_var}' not found in model variables: {col_names}.\n"
+            "Re-run with include_repo_rate=True."
+        )
+
+    irf_obj       = var_result.irf(periods=periods)
+    responses     = irf_obj.orth_irfs if orth else irf_obj.irfs
+    impulse_idx   = col_names.index(impulse_var)
+    response_cols = [c for c in col_names if c != impulse_var]
+    n_resp        = len(response_cols)
+    quarters      = np.arange(periods + 1)
+
+    # Confidence intervals (bootstrap; skipped gracefully if it fails)
+    has_ci = False
+    try:
+        ci = irf_obj.orth_errband_mc() if orth else irf_obj.errband_mc()
+        lower_ci, upper_ci = ci
+        has_ci = True
+    except Exception:
+        pass
+
+    # ── Dark theme ────────────────────────────────────────────────────────
+    BG     = "#0f1117"
+    GRID   = "#2a2d3a"
+    TEXT   = "#e0e0e0"
+    COLORS = ["#7eb8f7", "#a8e6cf", "#ff9f7f", "#c3a6ff", "#ffd580"]
+
+    fig, axes = plt.subplots(1, n_resp, figsize=(5 * n_resp, 5), squeeze=False)
+    fig.patch.set_facecolor(BG)
+    impulse_label = impulse_var.replace("d_", "").replace("_", " ")
+    fig.suptitle(
+        f"Orthogonalised IRF: 1-unit shock to {impulse_label}  "
+        f"({periods}-quarter horizon)",
+        fontsize=13, fontweight="bold", color=TEXT, y=1.02,
+    )
+
+    for ax_i, (resp_col, color) in enumerate(zip(response_cols, COLORS)):
+        ax = axes[0][ax_i]
+        ax.set_facecolor(BG)
+        for spine in ax.spines.values():
+            spine.set_edgecolor(GRID)
+
+        resp_idx = col_names.index(resp_col)
+        irf_vals = responses[:, resp_idx, impulse_idx]
+
+        ax.plot(quarters, irf_vals, color=color, linewidth=2.2,
+                marker="o", markersize=4, zorder=4, label="IRF")
+        ax.axhline(0, color="#888", linewidth=0.8, linestyle="--", alpha=0.6)
+
+        if has_ci:
+            try:
+                lo = lower_ci[:, resp_idx, impulse_idx]
+                hi = upper_ci[:, resp_idx, impulse_idx]
+                ax.fill_between(quarters, lo, hi, color=color,
+                                alpha=0.18, label="95% CI", zorder=3)
+            except Exception:
+                pass
+
+        ax.fill_between(quarters, irf_vals, 0,
+                        where=(irf_vals >= 0), alpha=0.10, color=color)
+        ax.fill_between(quarters, irf_vals, 0,
+                        where=(irf_vals < 0),  alpha=0.10, color="#ff4444")
+
+        resp_label = resp_col.replace("d_", "D").replace("_", " ")
+        ax.set_title(resp_label, fontsize=11, color=TEXT,
+                     fontweight="bold", pad=8)
+        ax.set_xlabel("Quarters after shock", color="#ccc", fontsize=9)
+        ax.set_ylabel("Response (first diff)", color="#ccc", fontsize=9)
+        ax.tick_params(colors="#bbb", labelsize=8)
+        ax.set_xlim(0, periods)
+        ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
+        ax.grid(True, color=GRID, linewidth=0.5, zorder=0)
+        ax.legend(fontsize=8, facecolor=BG, edgecolor=GRID,
+                  labelcolor="white", loc="upper right")
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight",
+                    facecolor=fig.get_facecolor())
+        print(f"IRF plot saved -> {save_path}")
+    plt.show()
+
+    # Numeric table
+    irf_df = pd.DataFrame(
+        {resp: responses[:, col_names.index(resp), impulse_idx]
+         for resp in response_cols},
+        index=[f"Q+{i}" for i in range(periods + 1)],
+    ).round(6)
+    print("\nOrthogonalised IRF values (rows = quarters after shock):")
+    print(irf_df.to_string())
+    return irf_obj
+
+
+# =============================================================================
+# Policy shock simulation
+# =============================================================================
+
+def simulate_policy_shock(
+    var_result,
+    df: "pd.DataFrame",
+    repo_rate_change: float = 0.5,
+    periods: int = 8,
+    impulse_var: str = "d_Repo_Rate",
+    save_path=None,
+) -> "pd.DataFrame":
+    """
+    Project how all macro indicators would evolve after a hypothetical
+    one-time change in the Repo Rate, compared to a no-shock baseline.
+
+    Approach: IRF scaling
+    ---------------------
+    Because the VAR is linear, a shock of size ``s`` produces exactly
+    ``s`` times the IRF response.  Steps:
+      1. Compute the orthogonalised IRF.
+      2. Scale by ``repo_rate_change`` to get the additional response of
+         every variable above the no-shock baseline.
+      3. Add those scaled IRF values to the baseline VAR.forecast.
+      4. Cumulate the first-differenced projections back to level paths
+         using the last observed raw level from the CSV.
+
+    Parameters
+    ----------
+    var_result       : fitted VARResults (from fit_var / run_var_pipeline)
+    df               : stationarity-adjusted DataFrame used to fit the model
+    repo_rate_change : repo rate change in pp (e.g. +0.50 = 50 bps hike,
+                       -0.25 = 25 bps cut)
+    periods          : quarters to project (default 8)
+    impulse_var      : column to shock (default 'd_Repo_Rate')
+    save_path        : optional path to save the comparison plot
+
+    Returns
+    -------
+    pd.DataFrame with MultiIndex columns (d_col, scenario) where scenario
+    is one of 'baseline', 'shocked', or 'delta'.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+
+    col_names   = var_result.model.endog_names
+    lag_order   = var_result.k_ar
+
+    if impulse_var not in col_names:
+        raise ValueError(
+            f"'{impulse_var}' not in model variables: {col_names}.\n"
+            "Re-run the VAR with include_repo_rate=True."
+        )
+    impulse_idx = col_names.index(impulse_var)
+
+    # ── Baseline VAR forecast ─────────────────────────────────────────────
+    last_obs    = df.values[-lag_order:]
+    baseline_fc = var_result.forecast(last_obs, steps=periods)
+    baseline_df = pd.DataFrame(baseline_fc, columns=col_names)
+
+    # ── Scaled IRF shock  ─────────────────────────────────────────────────
+    irf_obj    = var_result.irf(periods=periods)
+    orth_irfs  = irf_obj.orth_irfs                            # (periods+1, k, k)
+    irf_scaled = orth_irfs[1:periods+1, :, impulse_idx] * repo_rate_change
+
+    shocked_df = baseline_df + pd.DataFrame(irf_scaled, columns=col_names)
+
+    # ── Reconstruct level paths from raw CSV ──────────────────────────────
+    raw = pd.read_csv(_DATA_PATH, index_col=0)
+
+    def _q_to_date(label):
+        year, q = label.split("-Q")
+        return pd.Timestamp(int(year), (int(q) - 1) * 3 + 1, 1)
+
+    raw_idx        = pd.DatetimeIndex([_q_to_date(q) for q in raw.index])
+    forecast_dates = pd.date_range(
+        start=df.index[-1] + pd.DateOffset(months=3),
+        periods=periods, freq="QS",
+    )
+
+    records = {}
+    for d_col in col_names:
+        raw_col = d_col[2:]        # strip "d_" prefix
+        if raw_col in raw.columns:
+            raw_series = pd.Series(raw[raw_col].values, index=raw_idx)
+            last_level = raw_series.dropna().iloc[-1]
+        else:
+            last_level = 0.0
+
+        base_lev  = last_level + np.cumsum(baseline_df[d_col].values)
+        shock_lev = last_level + np.cumsum(shocked_df[d_col].values)
+
+        records[(d_col, "baseline")] = pd.Series(base_lev,  index=forecast_dates)
+        records[(d_col, "shocked")]  = pd.Series(shock_lev, index=forecast_dates)
+        records[(d_col, "delta")]    = pd.Series(
+            shock_lev - base_lev, index=forecast_dates)
+
+    result = pd.DataFrame(records)
+    result.index.name = "Quarter"
+
+    # ── Print summary ─────────────────────────────────────────────────────
+    sign_str = ("+" if repo_rate_change >= 0 else "") + str(repo_rate_change)
+    print(f"\n{'='*68}")
+    print(f"  POLICY SIMULATION: {sign_str} pp Repo Rate shock")
+    print(f"  Horizon: {periods} quarters from {df.index[-1].date()}")
+    print(f"{'='*68}")
+    for d_col in col_names:
+        label = d_col.replace("d_", "").replace("_", " ")
+        tbl = pd.DataFrame({
+            "Baseline": result[(d_col, "baseline")].round(4),
+            "Shocked":  result[(d_col, "shocked")].round(4),
+            "Delta":    result[(d_col, "delta")].round(4),
+        })
+        tbl.index = [f"Q+{i+1}" for i in range(len(tbl))]
+        print(f"\n  {label}:")
+        print(tbl.to_string(col_space=12))
+
+    # ── Plot ──────────────────────────────────────────────────────────────
+    BG      = "#0f1117"
+    GRID    = "#2a2d3a"
+    TEXT    = "#e0e0e0"
+    BASE_C  = "#7eb8f7"
+    SHOCK_C = "#ff9f7f" if repo_rate_change >= 0 else "#a8e6cf"
+
+    n_cols = len(col_names)
+    fig, axes = plt.subplots(1, n_cols, figsize=(5 * n_cols, 5), squeeze=False)
+    fig.patch.set_facecolor(BG)
+    fig.suptitle(
+        f"Policy Simulation: {sign_str} pp Repo Rate shock  "
+        f"({periods}-quarter projection)",
+        fontsize=13, fontweight="bold", color=TEXT, y=1.02,
+    )
+
+    for ax_i, d_col in enumerate(col_names):
+        ax = axes[0][ax_i]
+        ax.set_facecolor(BG)
+        for spine in ax.spines.values():
+            spine.set_edgecolor(GRID)
+
+        base  = result[(d_col, "baseline")]
+        shock = result[(d_col, "shocked")]
+
+        ax.plot(forecast_dates, base.values,  color=BASE_C,  linewidth=2.0,
+                linestyle="--", label="Baseline", zorder=4)
+        ax.plot(forecast_dates, shock.values, color=SHOCK_C, linewidth=2.2,
+                marker="o", markersize=4, label="Shocked", zorder=5)
+        ax.fill_between(forecast_dates, base.values, shock.values,
+                        alpha=0.15, color=SHOCK_C, zorder=3)
+
+        label = d_col.replace("d_", "").replace("_", " ")
+        ax.set_title(label, fontsize=11, color=TEXT, fontweight="bold", pad=8)
+        ax.set_xlabel("Quarter", color="#ccc", fontsize=9)
+        ax.tick_params(colors="#bbb", labelsize=8)
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=30, ha="right")
+        ax.grid(True, color=GRID, linewidth=0.5, zorder=0)
+        ax.legend(fontsize=8, facecolor=BG, edgecolor=GRID, labelcolor="white")
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight",
+                    facecolor=fig.get_facecolor())
+        print(f"\nPolicy shock plot saved -> {save_path}")
+    plt.show()
+
+    return result
+
 
 # =============================================================================
 # Entry point
 # =============================================================================
 
+
+# =============================================================================
+# Bootstrap Forecast Intervals
+# =============================================================================
+
+def bootstrap_forecast_intervals(
+    var_result,
+    df,
+    periods: int = 8,
+    n_boot: int = 1000,
+    ci: float = 0.90,
+    seed: int = 42,
+    save_path=None,
+):
+    """
+    Construct empirical forecast intervals for a fitted VAR model using
+    residual resampling (non-parametric bootstrap).
+
+    Why residual bootstrap instead of parametric intervals?
+    -------------------------------------------------------
+    statsmodels VAR.forecast_interval() uses asymptotic Gaussian theory,
+    which assumes normally distributed residuals.  Macro residuals often
+    exhibit fat tails (e.g. the COVID quarter) and skewness.  Residual
+    resampling makes no distributional assumption: it lets the actual
+    observed residuals drive the uncertainty, which is more honest for
+    short macro time-series.
+
+    Algorithm (per replicate)
+    -------------------------
+    1.  Draw ``periods`` rows from ``var_result.resid`` WITH REPLACEMENT,
+        giving a bootstrapped shock sequence u*_1 ... u*_T.
+    2.  Propagate the VAR forward step-by-step starting from the last
+        ``lag_order`` observed rows (the seed window):
+
+            y_hat_t = intercept + A_1 @ y_{t-1} + ... + A_p @ y_{t-p}
+            y_boot_t = y_hat_t + u*_t
+
+        where A_l are the fitted coefficient matrices.  The simulated
+        y_boot_t becomes the new history for the next step.
+    3.  Repeat n_boot times. Compute percentile bands across replicates.
+
+    Parameters
+    ----------
+    var_result : fitted VARResults  (from fit_var / run_var_pipeline)
+    df         : stationarity-adjusted pd.DataFrame used to fit the model;
+                 the last ``k_ar`` rows serve as the simulation seed
+    periods    : forecast horizon in quarters (default 8)
+    n_boot     : number of bootstrap replicates (default 1000)
+    ci         : confidence level, e.g. 0.90 yields 5th-95th pct band
+    seed       : random seed for reproducibility (default 42)
+    save_path  : optional Path/str to save the fan chart figure
+
+    Returns
+    -------
+    pd.DataFrame with MultiIndex columns (variable, band):
+        band in {'lower', 'point', 'upper'}
+    Index is a DatetimeIndex of the forecast quarters.
+
+    Example
+    -------
+    out = run_var_pipeline(include_repo_rate=True, maxlags=6)
+    bdf = bootstrap_forecast_intervals(out['var_result'], out['df'],
+                                       periods=8, n_boot=1000, ci=0.90)
+    # Access one variable's bands:
+    print(bdf[('d_GDP_Growth', 'lower')])   # 5th pct
+    print(bdf[('d_GDP_Growth', 'point')])   # deterministic point forecast
+    print(bdf[('d_GDP_Growth', 'upper')])   # 95th pct
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+
+    rng = np.random.default_rng(seed)
+
+    col_names  = list(var_result.model.endog_names)
+    k          = len(col_names)
+    lag_order  = var_result.k_ar
+    intercept  = var_result.intercept    # (k,)
+    coefs      = var_result.coefs        # (lag_order, k, k)
+    resid_pool = np.asarray(var_result.resid)   # (n_obs - lag_order, k)
+
+    # Seed buffer: last lag_order rows in REVERSE order so buf[0] = y_{t-1}
+    seed_buf = df.values[-lag_order:][::-1].copy()   # (lag_order, k)
+
+    # ── Deterministic point forecast (zero noise) ──────────────────────────
+    point_paths = np.zeros((periods, k))
+    buf = seed_buf.copy()
+    for t in range(periods):
+        y_hat = intercept.copy().astype(float)
+        for l in range(lag_order):
+            y_hat += coefs[l] @ buf[l]
+        point_paths[t] = y_hat
+        buf = np.vstack([y_hat, buf[:-1]])
+
+    # ── Bootstrap replicates ───────────────────────────────────────────────
+    boot_paths = np.zeros((n_boot, periods, k))
+
+    for b in range(n_boot):
+        # Sample residual rows WITH REPLACEMENT
+        idx        = rng.integers(0, len(resid_pool), size=periods)
+        boot_resid = resid_pool[idx]          # (periods, k)
+
+        buf = seed_buf.copy()
+        for t in range(periods):
+            y_hat = intercept.copy().astype(float)
+            for l in range(lag_order):
+                y_hat += coefs[l] @ buf[l]
+            y_hat += boot_resid[t]            # add resampled shock
+            boot_paths[b, t] = y_hat
+            buf = np.vstack([y_hat, buf[:-1]])
+
+    # ── Percentile bands ───────────────────────────────────────────────────
+    alpha    = (1.0 - ci) / 2.0
+    lo_pct   = alpha * 100         # e.g. 5.0
+    hi_pct   = (1.0 - alpha) * 100 # e.g. 95.0
+    lo_band  = np.percentile(boot_paths, lo_pct, axis=0)   # (periods, k)
+    hi_band  = np.percentile(boot_paths, hi_pct, axis=0)   # (periods, k)
+
+    # Also compute inner quartile bands for the fan chart
+    q25_band = np.percentile(boot_paths, 25, axis=0)
+    q75_band = np.percentile(boot_paths, 75, axis=0)
+    q10_band = np.percentile(boot_paths, 10, axis=0)
+    q90_band = np.percentile(boot_paths, 90, axis=0)
+
+    # ── Build output DataFrame ─────────────────────────────────────────────
+    forecast_dates = pd.date_range(
+        start=df.index[-1] + pd.DateOffset(months=3),
+        periods=periods,
+        freq="QS",
+    )
+
+    records = {}
+    for j, col in enumerate(col_names):
+        records[(col, "lower")] = pd.Series(lo_band[:, j],     index=forecast_dates)
+        records[(col, "point")] = pd.Series(point_paths[:, j], index=forecast_dates)
+        records[(col, "upper")] = pd.Series(hi_band[:, j],     index=forecast_dates)
+
+    result = pd.DataFrame(records)
+    result.index.name = "Quarter"
+
+    # ── Print summary ──────────────────────────────────────────────────────
+    lo_label = int(lo_pct)
+    hi_label = int(hi_pct)
+    print(f"\n{'='*72}")
+    print(f"  BOOTSTRAP FORECAST INTERVALS")
+    print(f"  Replicates : {n_boot}   |   CI level : {int(ci*100)}%  "
+          f"({lo_label}th-{hi_label}th percentile)")
+    print(f"  Horizon    : {periods} quarters from {df.index[-1].date()}")
+    print(f"  Residuals  : {len(resid_pool)} rows in pool")
+    print(f"{'='*72}")
+
+    for col in col_names:
+        label = col.replace("d_", "").replace("_", " ")
+        tbl = pd.DataFrame({
+            f"  {lo_label}th pct": result[(col, "lower")].round(4),
+            "  Point":             result[(col, "point")].round(4),
+            f"  {hi_label}th pct": result[(col, "upper")].round(4),
+        })
+        tbl.index = [f"Q+{i+1}" for i in range(len(tbl))]
+        print(f"\n  {label}:")
+        print(tbl.to_string())
+
+    # ── Fan chart ──────────────────────────────────────────────────────────
+    BG     = "#0f1117"
+    GRID   = "#2a2d3a"
+    TEXT   = "#e0e0e0"
+    COLORS = ["#7eb8f7", "#a8e6cf", "#ff9f7f", "#c3a6ff", "#ffd580"]
+
+    n_cols = len(col_names)
+    fig, axes = plt.subplots(
+        1, n_cols, figsize=(5 * n_cols, 5), squeeze=False
+    )
+    fig.patch.set_facecolor(BG)
+    fig.suptitle(
+        f"VAR Bootstrap Fan Chart  "
+        f"({n_boot} replicates, {int(ci*100)}% CI — {lo_label}th to {hi_label}th pct)",
+        fontsize=13, fontweight="bold", color=TEXT, y=1.02,
+    )
+
+    for ax_i, (col, color) in enumerate(zip(col_names, COLORS)):
+        ax = axes[0][ax_i]
+        ax.set_facecolor(BG)
+        for spine in ax.spines.values():
+            spine.set_edgecolor(GRID)
+
+        j     = col_names.index(col)
+        lo    = lo_band[:, j]
+        hi    = hi_band[:, j]
+        pt    = point_paths[:, j]
+        dates = result.index
+
+        # Outermost fan layer: 10th-90th pct
+        ax.fill_between(dates, q10_band[:, j], q90_band[:, j],
+                        color=color, alpha=0.08, label="10-90 pct")
+        # Inner quartile range
+        ax.fill_between(dates, q25_band[:, j], q75_band[:, j],
+                        color=color, alpha=0.16, label="25-75 pct")
+        # Requested CI band
+        ax.fill_between(dates, lo, hi,
+                        color=color, alpha=0.24,
+                        label=f"{lo_label}-{hi_label} pct")
+        # Point forecast line
+        ax.plot(dates, pt, color=color, linewidth=2.2,
+                marker="o", markersize=4, zorder=5, label="Point")
+        ax.axhline(0, color="#888", linewidth=0.8, linestyle="--", alpha=0.5)
+
+        label = col.replace("d_", "D").replace("_", " ")
+        ax.set_title(label, fontsize=11, color=TEXT, fontweight="bold", pad=8)
+        ax.set_xlabel("Quarter", color="#ccc", fontsize=9)
+        ax.set_ylabel("First diff (pp)", color="#ccc", fontsize=9)
+        ax.tick_params(colors="#bbb", labelsize=8)
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=30, ha="right")
+        ax.grid(True, color=GRID, linewidth=0.5, zorder=0)
+        ax.legend(fontsize=7, facecolor=BG, edgecolor=GRID,
+                  labelcolor="white", loc="upper right",
+                  framealpha=0.8)
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight",
+                    facecolor=fig.get_facecolor())
+        print(f"\nFan chart saved -> {save_path}")
+    plt.show()
+
+    return result
+
+
 if __name__ == "__main__":
-    # ── Configuration ──────────────────────────────────────────────────────
-    # include_repo_rate=True  -> sample capped at 2021-Q1 (~44 quarters)
-    # include_repo_rate=False -> full sample 2010-Q2 -> 2025-Q4 (~62 quarters)
-    #
-    # We run BOTH scenarios so you can compare:
+    import matplotlib
+    matplotlib.use("Agg")
+
+    ROOT     = Path(__file__).parent.parent
+    DOCS_DIR = ROOT / "docs"
+    DOCS_DIR.mkdir(exist_ok=True)
 
     print("\n" + "#" * 70)
     print("# SCENARIO A -- 3 core variables, full sample (2010-Q2 -> 2025-Q4)")
@@ -422,16 +963,54 @@ if __name__ == "__main__":
     out_a = run_var_pipeline(
         include_repo_rate=False,
         include_iip=False,
-        granger_source="d_CPI_Inflation",   # test CPI as leading indicator
+        granger_source="d_CPI_Inflation",
         maxlags=8,
     )
 
     print("\n" + "#" * 70)
-    print("# SCENARIO B -- 4 variables including Repo_Rate (2011-Q1 -> 2021-Q1)")
+    print("# SCENARIO B -- 4 variables incl. Repo_Rate (2011-Q1 -> 2021-Q1)")
     print("#" * 70)
     out_b = run_var_pipeline(
         include_repo_rate=True,
         include_iip=False,
-        granger_source="d_Repo_Rate",       # test monetary policy lead
-        maxlags=6,   # lower max because sample is shorter
+        granger_source="d_Repo_Rate",
+        maxlags=6,
+    )
+
+    # ── IRF: 10-quarter horizon, shock to Repo_Rate ──────────────────────
+    print("\n" + "#" * 70)
+    print("# IRF: 10-quarter shock to Repo_Rate (Scenario B)")
+    print("#" * 70)
+    irf = plot_irf(
+        out_b["var_result"],
+        impulse_var="d_Repo_Rate",
+        periods=10,
+        orth=True,
+        save_path=DOCS_DIR / "var_irf_repo_rate.png",
+    )
+
+    # ── Policy simulation: +50 bps hike ──────────────────────────────────
+    print("\n" + "#" * 70)
+    print("# POLICY SIMULATION: +0.50 pp Repo Rate hike")
+    print("#" * 70)
+    hike = simulate_policy_shock(
+        out_b["var_result"],
+        out_b["df"],
+        repo_rate_change=+0.50,
+        periods=8,
+        impulse_var="d_Repo_Rate",
+        save_path=DOCS_DIR / "var_shock_hike_50bps.png",
+    )
+
+    # ── Policy simulation: -25 bps cut ───────────────────────────────────
+    print("\n" + "#" * 70)
+    print("# POLICY SIMULATION: -0.25 pp Repo Rate cut")
+    print("#" * 70)
+    cut = simulate_policy_shock(
+        out_b["var_result"],
+        out_b["df"],
+        repo_rate_change=-0.25,
+        periods=8,
+        impulse_var="d_Repo_Rate",
+        save_path=DOCS_DIR / "var_shock_cut_25bps.png",
     )
