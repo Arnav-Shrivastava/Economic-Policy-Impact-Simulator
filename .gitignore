@@ -12,3 +12,9 @@ notebooks/verify.py
 notebooks/run_eda.py
 notebooks/build_02_eda_notebook.py
 notebooks/build_03_arima_notebook.py
+notebooks/build_04_var_notebook.py
+notebooks/fix_notebook.py
+notebooks/patch_var.py
+notebooks/patch_bootstrap.py
+notebooks/fix_stdout.py
+
