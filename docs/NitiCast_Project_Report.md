@@ -9,7 +9,7 @@ By adjusting a simple slider representing the rate hike or cut, the system dynam
 ### 2. Scope of the Implementation
 What was originally planned vs. what was actually built:
 - **Core Architecture:** The final system leverages a robust **Hybrid VAR + LSTM model**. A Vector Autoregression (VAR) model of order 1 captures the linear dynamics among the variables, while a Long Short-Term Memory (LSTM) deep learning network is trained on the VAR's residual errors to capture remaining non-linear patterns.
-- **Variables Modeled:** The system models CPI Inflation, GDP Growth, and the Unemployment Rate. The Repo Rate is treated as an exogenous shock mechanism that filters through empirical pass-through coefficients before the forecasting engine runs.
+- **Variables Modeled:** The system models CPI Inflation, GDP Growth, and the Unemployment Rate. The Repo Rate is treated as an exogenous shock mechanism whose empirical pass-through coefficients are applied directly to the hybrid model's 8-quarter level forecasts to approximate a realistic Impulse Response Function (IRF) curve.
 - **Forecasting Horizon:** 8 quarters (2 years) into the future.
 - **Confidence Intervals:** 90% parametric confidence bands are generated around the point forecasts, visualized as shaded fan charts.
 - **User Interface:** A production-grade Streamlit web application featuring a dark glassmorphism theme, Plotly interactive charts, dynamic KPI metric cards, and collapsible data tables.

@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c34015f7-63a3-47db-81af-a1468d2f076f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/NitiCast_Project_Report.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/NitiCast_Project_Report.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/07_evaluation.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/07_evaluation.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/model.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,7 +58,7 @@
       <workItem from="1787028932566" duration="22000" />
       <workItem from="1787028955982" duration="994000" />
       <workItem from="1787029971356" duration="788000" />
-      <workItem from="1787060562938" duration="2128000" />
+      <workItem from="1787060562938" duration="3118000" />
     </task>
     <servers />
   </component>

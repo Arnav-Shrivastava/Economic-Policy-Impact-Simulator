@@ -39,8 +39,8 @@ _MODELS_DIR = _ROOT / "models"
 # ---------------------------------------------------------------------------
 # Empirically estimated pass-through coefficients from Repo Rate to macro vars
 # (based on Granger causality & impulse response analysis in Phase 4 VAR).
-# These are used to *shift the last seed observation* before forecasting,
-# approximating the first-order effect of a Repo Rate change on each variable.
+# These are applied directly to the 8-quarter level forecasts (scaled over 
+# the first 4 quarters) to approximate a realistic Impulse Response Function (IRF).
 #
 # Sign convention (per quarter, first-differenced units):
 #   CPI_Inflation    : -0.15  (rate hike reduces inflation)
@@ -69,9 +69,10 @@ def policy_hybrid_forecast(
     """
     Run a policy-scenario hybrid forecast with a Repo Rate shock.
 
-    The shock is applied by perturbing the *last seed row* of ``df_diff``
-    using the empirical pass-through coefficients in ``_REPO_PASSTHROUGH``.
-    This is an approximation of a reduced-form impulse response.
+    The shock is applied by taking the empirical pass-through coefficients in
+    ``_REPO_PASSTHROUGH`` and adding them directly to the level forecasts,
+    scaled smoothly over the first 4 quarters to approximate a macroeconomic
+    Impulse Response Function (IRF).
 
     Confidence intervals are estimated via a simple parametric approach:
         lower = point_forecast - z * sigma_resid * sqrt(h)
@@ -112,26 +113,30 @@ def policy_hybrid_forecast(
     z = float(np.abs(np.percentile(rng.standard_normal(100_000),
                                    (1 + ci_level) / 2 * 100)))
 
-    # --- Apply policy shock to last seed row ---------------------------------
-    df_diff_shocked = df_diff.copy()
-    for col in col_names:
-        if col in _REPO_PASSTHROUGH:
-            loc = df_diff_shocked.columns.get_loc(col)
-            df_diff_shocked.iloc[-1, loc] += (
-                repo_rate_change * _REPO_PASSTHROUGH[col]
-            )
-
     # --- Run hybrid forecast --------------------------------------------------
+    # We no longer shock the seed row (df_diff). The VAR coefficients are too
+    # close to zero, causing the shock to die instantly. Instead, we apply the
+    # shock directly to the level forecasts below.
     forecast_df = hybrid_forecast(
         periods=periods,
         var_results=var_results,
         resid_lstm=resid_lstm,
-        df_diff=df_diff_shocked,
+        df_diff=df_diff,
         resid_df=resid_df,
         df_raw=df_raw,
         window=window,
         cumulate_levels=True,
     )
+
+    # --- Apply policy shock directly to the forecast levels -------------------
+    # Spread the pass-through effect over the first 4 quarters to approximate
+    # a smooth Impulse Response Function (IRF).
+    for col in col_names:
+        if col in _REPO_PASSTHROUGH:
+            shock_target = repo_rate_change * _REPO_PASSTHROUGH[col]
+            # Multiplier: 0.25, 0.50, 0.75, 1.0, 1.0, ...
+            mult = np.clip(np.arange(1, periods + 1) / 4.0, 0, 1)
+            forecast_df[(col, "level")] += (shock_target * mult)
 
     # --- Residual std per variable (for CI width) ----------------------------
     resid_std = resid_df.std()  # Series indexed by col_names
