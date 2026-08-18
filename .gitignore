@@ -3,18 +3,27 @@ __pycache__/
 .ipynb_checkpoints/
 venv/
 .env
+.venv311/
 *.csv.bak
 .DS_Store
 data/raw/*.xlsx
 !data/raw/.gitkeep
+
+# ── Scratch / build helper scripts (not part of the deliverable) ───────────
 notebooks/fix_notebook.py
 notebooks/verify.py
 notebooks/run_eda.py
+notebooks/fix_stdout.py
+notebooks/patch_var.py
+notebooks/patch_bootstrap.py
+
+# Notebook builders (used to generate .ipynb files; not needed in repo)
 notebooks/build_02_eda_notebook.py
 notebooks/build_03_arima_notebook.py
 notebooks/build_04_var_notebook.py
-notebooks/fix_notebook.py
-notebooks/patch_var.py
-notebooks/patch_bootstrap.py
-notebooks/fix_stdout.py
+notebooks/build_05_lstm_notebook.py
+
+# Phase 5 prototype scripts (superseded by src/model_lstm.py)
+notebooks/lstm_macro_forecast.py
+notebooks/lstm_evaluate.py
 

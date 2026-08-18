@@ -1,0 +1,39 @@
+{
+  "model": "LSTM",
+  "architecture": {
+    "layers": [
+      "LSTM(64)",
+      "Dropout(0.2)",
+      "LSTM(32)",
+      "Dropout(0.2)",
+      "Dense(3)"
+    ],
+    "look_back": 4,
+    "n_features": 3,
+    "loss": "MSE",
+    "optimizer": "Adam(lr=1e-3)"
+  },
+  "data": {
+    "columns": [
+      "CPI_Inflation",
+      "GDP_Growth",
+      "Unemployment_Rate"
+    ],
+    "n_train": 48,
+    "n_test": 12
+  },
+  "metrics": {
+    "CPI_Inflation": {
+      "RMSE": 1.379521,
+      "MAPE": 37.0611
+    },
+    "GDP_Growth": {
+      "RMSE": 5.809353,
+      "MAPE": 78.8968
+    },
+    "Unemployment_Rate": {
+      "RMSE": 1.387915,
+      "MAPE": 33.0168
+    }
+  }
+}
