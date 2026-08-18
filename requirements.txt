@@ -3,5 +3,5 @@ pandas
 numpy
 plotly
 statsmodels
-tensorflow
+tensorflow-cpu
 scikit-learn
