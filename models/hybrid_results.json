@@ -1,0 +1,64 @@
+{
+  "model": "Hybrid VAR+LSTM",
+  "var_lag_order": 1,
+  "window": 4,
+  "columns": [
+    "d_CPI_Inflation",
+    "d_GDP_Growth",
+    "d_Unemployment_Rate"
+  ],
+  "comparison": {
+    "VAR": {
+      "d_CPI_Inflation": {
+        "RMSE": 0.761786,
+        "MAPE": 84.6523
+      },
+      "d_GDP_Growth": {
+        "RMSE": 0.18058,
+        "MAPE": 94.9748
+      },
+      "d_Unemployment_Rate": {
+        "RMSE": 0.179968,
+        "MAPE": 159.5024
+      }
+    },
+    "Residual_LSTM": {
+      "d_CPI_Inflation": {
+        "RMSE": 0.760562,
+        "MAPE": 98.9664
+      },
+      "d_GDP_Growth": {
+        "RMSE": 0.190045,
+        "MAPE": 103.8325
+      },
+      "d_Unemployment_Rate": {
+        "RMSE": 0.156515,
+        "MAPE": 76.7008
+      }
+    },
+    "Hybrid": {
+      "d_CPI_Inflation": {
+        "RMSE": 0.760562,
+        "MAPE": 84.2781
+      },
+      "d_GDP_Growth": {
+        "RMSE": 0.190045,
+        "MAPE": 102.0353
+      },
+      "d_Unemployment_Rate": {
+        "RMSE": 0.156515,
+        "MAPE": 147.4199
+      }
+    }
+  },
+  "forecast_quarters": [
+    "2026-01-01",
+    "2026-04-01",
+    "2026-07-01",
+    "2026-10-01",
+    "2027-01-01",
+    "2027-04-01",
+    "2027-07-01",
+    "2027-10-01"
+  ]
+}

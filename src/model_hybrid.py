@@ -113,11 +113,21 @@ def _rmse(actual: np.ndarray, pred: np.ndarray) -> float:
     return float(np.sqrt(mean_squared_error(actual.ravel(), pred.ravel())))
 
 
-def _mape(actual: np.ndarray, pred: np.ndarray, eps: float = 1e-8) -> float:
-    """Mean Absolute Percentage Error (%)."""
-    return float(
-        np.mean(np.abs((actual - pred) / (np.abs(actual) + eps))) * 100
-    )
+def _mape(actual: np.ndarray, pred: np.ndarray, zero_tol: float = 0.01) -> float:
+    """
+    Mean Absolute Percentage Error (%), skipping quarters where |actual| <= zero_tol.
+
+    First-differenced macro series regularly pass through zero, making the
+    naive MAPE formula blow up.  This matches the zero-safe approach used
+    in the VAR notebook (build_04_var_notebook.py).
+    Returns nan when no non-zero actuals exist in the slice.
+    """
+    a = actual.ravel()
+    p = pred.ravel()
+    mask = np.abs(a) > zero_tol
+    if mask.sum() == 0:
+        return float("nan")
+    return float(np.mean(np.abs((a[mask] - p[mask]) / a[mask])) * 100)
 
 
 def _per_column_metrics(
@@ -128,21 +138,23 @@ def _per_column_metrics(
 ) -> Dict[str, Dict[str, float]]:
     """Return {col: {RMSE, MAPE}} and pretty-print a summary table."""
     metrics: Dict[str, Dict[str, float]] = {}
-    print(f"\n{'=' * 58}")
+    print(f"\n{'=' * 60}")
     print(f"  {label} -- Test-Set Metrics")
-    print(f"{'=' * 58}")
+    print(f"{'=' * 60}")
     print(f"  {'Variable':<26}  {'RMSE':>10}  {'MAPE (%)':>10}")
     print(f"  {'-'*26}  {'-'*10}  {'-'*10}")
     for i, name in enumerate(col_names):
         r = _rmse(actual[:, i], pred[:, i])
         m = _mape(actual[:, i], pred[:, i])
-        metrics[name] = {"RMSE": round(r, 6), "MAPE": round(m, 4)}
-        print(f"  {name:<26}  {r:>10.4f}  {m:>9.2f}%")
+        mape_str = f"{m:>9.2f}%" if not np.isnan(m) else "       N/A"
+        metrics[name] = {"RMSE": round(r, 6), "MAPE": round(m, 4) if not np.isnan(m) else None}
+        print(f"  {name:<26}  {r:>10.4f}  {mape_str}")
     mean_r = np.mean([v["RMSE"] for v in metrics.values()])
-    mean_m = np.mean([v["MAPE"] for v in metrics.values()])
+    valid_mapes = [v["MAPE"] for v in metrics.values() if v["MAPE"] is not None]
+    mean_m_str = f"{np.mean(valid_mapes):>9.2f}%" if valid_mapes else "       N/A"
     print(f"  {'-'*26}  {'-'*10}  {'-'*10}")
-    print(f"  {'MEAN':<26}  {mean_r:>10.4f}  {mean_m:>9.2f}%")
-    print(f"{'=' * 58}")
+    print(f"  {'MEAN':<26}  {mean_r:>10.4f}  {mean_m_str}")
+    print(f"{'=' * 60}")
     return metrics
 
 
@@ -523,7 +535,8 @@ def compare_models(
     y_actual_test  = actual_df.values[test_row_start:test_row_end]   # (n_test, k)
 
     # VAR fitted values on test window
-    fitted_arr     = var_results.fittedvalues  # (T-p, k); aligned to actual_df
+    # .fittedvalues may be a DataFrame in newer statsmodels; convert to numpy
+    fitted_arr     = np.asarray(var_results.fittedvalues)  # (T-p, k)
     y_var_test     = fitted_arr[test_row_start:test_row_end]          # (n_test, k)
 
     # LSTM residual predictions on test sequences

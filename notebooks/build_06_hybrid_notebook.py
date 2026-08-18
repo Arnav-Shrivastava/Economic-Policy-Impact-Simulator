@@ -459,7 +459,7 @@ test_start = split2 + WINDOW
 test_end   = test_start + len(y_test2)
 
 y_actual  = actual_df.values[test_start:test_end]
-y_var     = var_results.fittedvalues[test_start:test_end]
+y_var     = np.asarray(var_results.fittedvalues)[test_start:test_end]
 y_resid_p = resid_lstm.predict(X_test2, verbose=0)
 y_hybrid  = y_var + y_resid_p
 test_idx  = actual_df.index[test_start:test_end]
