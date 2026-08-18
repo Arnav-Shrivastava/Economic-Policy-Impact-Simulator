@@ -1,0 +1,539 @@
+{
+  "event": {
+    "name": "RBI Repo Rate Hike -- April 2022",
+    "event_quarter": "2022-Q2",
+    "description": "RBI MPC raised the repo rate by 40 bps from 4.00% to 4.40% in an off-cycle emergency meeting on 4 May 2022, signalling the start of an aggressive rate-hike cycle to tame CPI inflation that had breached the 6% upper tolerance band."
+  },
+  "models": {
+    "ARIMA": {
+      "GDP_Growth": {
+        "directional_accuracy": 0.0,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.6094,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 8.0836,
+            "forecast_change": 0.4742,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.6094,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 6.8734,
+            "forecast_change": -0.736,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.2102,
+            "actual_change": -0.3991,
+            "actual_direction": -1,
+            "forecast_curr": 8.0856,
+            "forecast_change": 0.4763,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 7.2102,
+            "actual_curr": 7.2102,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 8.2567,
+            "forecast_change": 1.0465,
+            "forecast_direction": 1,
+            "correct": false
+          }
+        ]
+      }
+    },
+    "VAR": {
+      "CPI_Inflation": {
+        "directional_accuracy": 0.25,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 6.699,
+            "actual_curr": 6.699,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 5.676,
+            "forecast_change": -1.0231,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 6.699,
+            "actual_curr": 6.699,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 6.0328,
+            "forecast_change": -0.6662,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 6.699,
+            "actual_curr": 5.6491,
+            "actual_change": -1.0499,
+            "actual_direction": -1,
+            "forecast_curr": 5.7695,
+            "forecast_change": -0.9296,
+            "forecast_direction": -1,
+            "correct": true
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 5.6491,
+            "actual_curr": 5.6491,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 5.5252,
+            "forecast_change": -0.1239,
+            "forecast_direction": -1,
+            "correct": false
+          }
+        ]
+      },
+      "GDP_Growth": {
+        "directional_accuracy": 0.0,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.6094,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 7.6501,
+            "forecast_change": 0.0408,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.6094,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 7.1902,
+            "forecast_change": -0.4192,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.2102,
+            "actual_change": -0.3991,
+            "actual_direction": -1,
+            "forecast_curr": 7.7439,
+            "forecast_change": 0.1345,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 7.2102,
+            "actual_curr": 7.2102,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 7.688,
+            "forecast_change": 0.4778,
+            "forecast_direction": 1,
+            "correct": false
+          }
+        ]
+      },
+      "Unemployment_Rate": {
+        "directional_accuracy": 0.25,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 4.822,
+            "actual_curr": 4.822,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 4.9083,
+            "forecast_change": 0.0863,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 4.822,
+            "actual_curr": 4.822,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 5.492,
+            "forecast_change": 0.67,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 4.822,
+            "actual_curr": 4.172,
+            "actual_change": -0.65,
+            "actual_direction": -1,
+            "forecast_curr": 4.4791,
+            "forecast_change": -0.3429,
+            "forecast_direction": -1,
+            "correct": true
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 4.172,
+            "actual_curr": 4.172,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 3.7494,
+            "forecast_change": -0.4226,
+            "forecast_direction": -1,
+            "correct": false
+          }
+        ]
+      }
+    },
+    "LSTM": {
+      "CPI_Inflation": {
+        "directional_accuracy": 0.25,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 6.699,
+            "actual_curr": 6.699,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 7.0415,
+            "forecast_change": 0.3425,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 6.699,
+            "actual_curr": 6.699,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 5.4484,
+            "forecast_change": -1.2507,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 6.699,
+            "actual_curr": 5.6491,
+            "actual_change": -1.0499,
+            "actual_direction": -1,
+            "forecast_curr": 6.6033,
+            "forecast_change": -0.0958,
+            "forecast_direction": -1,
+            "correct": true
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 5.6491,
+            "actual_curr": 5.6491,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 5.4892,
+            "forecast_change": -0.1599,
+            "forecast_direction": -1,
+            "correct": false
+          }
+        ]
+      },
+      "GDP_Growth": {
+        "directional_accuracy": 0.0,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.6094,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 7.2875,
+            "forecast_change": -0.3218,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.6094,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 6.6922,
+            "forecast_change": -0.9171,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.2102,
+            "actual_change": -0.3991,
+            "actual_direction": -1,
+            "forecast_curr": 8.5773,
+            "forecast_change": 0.9679,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 7.2102,
+            "actual_curr": 7.2102,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 6.9248,
+            "forecast_change": -0.2854,
+            "forecast_direction": -1,
+            "correct": false
+          }
+        ]
+      },
+      "Unemployment_Rate": {
+        "directional_accuracy": 0.25,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 4.822,
+            "actual_curr": 4.822,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 4.208,
+            "forecast_change": -0.614,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 4.822,
+            "actual_curr": 4.822,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 4.2994,
+            "forecast_change": -0.5226,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 4.822,
+            "actual_curr": 4.172,
+            "actual_change": -0.65,
+            "actual_direction": -1,
+            "forecast_curr": 4.7108,
+            "forecast_change": -0.1112,
+            "forecast_direction": -1,
+            "correct": true
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 4.172,
+            "actual_curr": 4.172,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 4.5105,
+            "forecast_change": 0.3385,
+            "forecast_direction": 1,
+            "correct": false
+          }
+        ]
+      }
+    },
+    "Hybrid": {
+      "CPI_Inflation": {
+        "directional_accuracy": 0.25,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 6.699,
+            "actual_curr": 6.699,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 6.8941,
+            "forecast_change": 0.1951,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 6.699,
+            "actual_curr": 6.699,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 6.9014,
+            "forecast_change": 0.2023,
+            "forecast_direction": 1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 6.699,
+            "actual_curr": 5.6491,
+            "actual_change": -1.0499,
+            "actual_direction": -1,
+            "forecast_curr": 6.5358,
+            "forecast_change": -0.1632,
+            "forecast_direction": -1,
+            "correct": true
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 5.6491,
+            "actual_curr": 5.6491,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 5.5166,
+            "forecast_change": -0.1326,
+            "forecast_direction": -1,
+            "correct": false
+          }
+        ]
+      },
+      "GDP_Growth": {
+        "directional_accuracy": 0.25,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.6094,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 7.4345,
+            "forecast_change": -0.1749,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.6094,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 7.3139,
+            "forecast_change": -0.2955,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 7.6094,
+            "actual_curr": 7.2102,
+            "actual_change": -0.3991,
+            "actual_direction": -1,
+            "forecast_curr": 7.4866,
+            "forecast_change": -0.1227,
+            "forecast_direction": -1,
+            "correct": true
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 7.2102,
+            "actual_curr": 7.2102,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 7.6918,
+            "forecast_change": 0.4816,
+            "forecast_direction": 1,
+            "correct": false
+          }
+        ]
+      },
+      "Unemployment_Rate": {
+        "directional_accuracy": 0.25,
+        "quarters": [
+          {
+            "quarter": "2022-Q3",
+            "actual_prev": 4.822,
+            "actual_curr": 4.822,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 4.8064,
+            "forecast_change": -0.0156,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2022-Q4",
+            "actual_prev": 4.822,
+            "actual_curr": 4.822,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 4.5159,
+            "forecast_change": -0.3061,
+            "forecast_direction": -1,
+            "correct": false
+          },
+          {
+            "quarter": "2023-Q1",
+            "actual_prev": 4.822,
+            "actual_curr": 4.172,
+            "actual_change": -0.65,
+            "actual_direction": -1,
+            "forecast_curr": 3.8722,
+            "forecast_change": -0.9498,
+            "forecast_direction": -1,
+            "correct": true
+          },
+          {
+            "quarter": "2023-Q2",
+            "actual_prev": 4.172,
+            "actual_curr": 4.172,
+            "actual_change": 0.0,
+            "actual_direction": 0,
+            "forecast_curr": 4.4622,
+            "forecast_change": 0.2902,
+            "forecast_direction": 1,
+            "correct": false
+          }
+        ]
+      }
+    }
+  },
+  "summary": {
+    "ARIMA": {
+      "per_variable_DA": {
+        "GDP_Growth": 0.0
+      },
+      "overall_DA": 0.0
+    },
+    "VAR": {
+      "per_variable_DA": {
+        "CPI_Inflation": 0.25,
+        "GDP_Growth": 0.0,
+        "Unemployment_Rate": 0.25
+      },
+      "overall_DA": 0.1667
+    },
+    "LSTM": {
+      "per_variable_DA": {
+        "CPI_Inflation": 0.25,
+        "GDP_Growth": 0.0,
+        "Unemployment_Rate": 0.25
+      },
+      "overall_DA": 0.1667
+    },
+    "Hybrid": {
+      "per_variable_DA": {
+        "CPI_Inflation": 0.25,
+        "GDP_Growth": 0.25,
+        "Unemployment_Rate": 0.25
+      },
+      "overall_DA": 0.25
+    }
+  }
+}
